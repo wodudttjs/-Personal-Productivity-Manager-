@@ -1,0 +1,24 @@
+{
+  "version": 1,
+  "ui": {
+    "theme": "light",
+    "window_size": "1000x700"
+  },
+  "web": {
+    "weather_provider": "wttr.in",
+    "weather_city": "Seoul",
+    "weather_api_key": "",
+    "rss_feeds": [
+      "https://news.google.com/rss?hl=en-US&gl=US&ceid=US:en"
+    ],
+    "exchange_base": "USD"
+  },
+  "file_organizer": {
+    "downloads_path": "",
+    "create_category_folders": true
+  },
+  "notifications": {
+    "todo_due_alert_minutes": 60
+  }
+}
+
