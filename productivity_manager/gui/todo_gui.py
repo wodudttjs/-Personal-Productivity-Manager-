@@ -12,35 +12,35 @@ def build_todo_tab(parent, todo_manager: TodoManager):
     controls = ttk.Frame(frame)
     controls.pack(fill=tk.X, padx=8, pady=(8, 4))
 
-    btn_add = ttk.Button(controls, text="Add", command=lambda: _add_task(frame, todo_manager, tree))
+    btn_add = ttk.Button(controls, text="추가", command=lambda: _add_task(frame, todo_manager, tree))
     btn_add.pack(side=tk.LEFT, padx=4)
-    btn_edit = ttk.Button(controls, text="Edit", command=lambda: _edit_task(frame, todo_manager, tree))
+    btn_edit = ttk.Button(controls, text="수정", command=lambda: _edit_task(frame, todo_manager, tree))
     btn_edit.pack(side=tk.LEFT, padx=4)
-    btn_del = ttk.Button(controls, text="Delete", command=lambda: _delete_task(todo_manager, tree))
+    btn_del = ttk.Button(controls, text="삭제", command=lambda: _delete_task(todo_manager, tree))
     btn_del.pack(side=tk.LEFT, padx=4)
-    btn_toggle = ttk.Button(controls, text="Toggle Complete", command=lambda: _toggle_complete(todo_manager, tree))
+    btn_toggle = ttk.Button(controls, text="완료 전환", command=lambda: _toggle_complete(todo_manager, tree))
     btn_toggle.pack(side=tk.LEFT, padx=4)
 
     # Filters
     filters = ttk.Frame(frame)
     filters.pack(fill=tk.X, padx=8, pady=(0, 8))
     search_var = tk.StringVar()
-    ttk.Label(filters, text="Search:").pack(side=tk.LEFT)
+    ttk.Label(filters, text="검색:").pack(side=tk.LEFT)
     ent = ttk.Entry(filters, textvariable=search_var, width=30)
     ent.pack(side=tk.LEFT, padx=6)
 
-    priority_var = tk.StringVar(value="All")
-    ttk.Label(filters, text="Priority:").pack(side=tk.LEFT, padx=(12, 0))
-    cb_pri = ttk.Combobox(filters, values=["All", "High", "Medium", "Low"], textvariable=priority_var, width=10, state="readonly")
+    priority_var = tk.StringVar(value="전체")
+    ttk.Label(filters, text="우선순위:").pack(side=tk.LEFT, padx=(12, 0))
+    cb_pri = ttk.Combobox(filters, values=["전체", "높음", "보통", "낮음"], textvariable=priority_var, width=10, state="readonly")
     cb_pri.pack(side=tk.LEFT, padx=4)
 
-    category_var = tk.StringVar(value="All")
-    ttk.Label(filters, text="Category:").pack(side=tk.LEFT, padx=(12, 0))
-    cb_cat = ttk.Combobox(filters, values=["All"], textvariable=category_var, width=16, state="readonly")
+    category_var = tk.StringVar(value="전체")
+    ttk.Label(filters, text="카테고리:").pack(side=tk.LEFT, padx=(12, 0))
+    cb_cat = ttk.Combobox(filters, values=["전체"], textvariable=category_var, width=16, state="readonly")
     cb_cat.pack(side=tk.LEFT, padx=4)
 
     show_completed = tk.BooleanVar(value=True)
-    ttk.Checkbutton(filters, text="Show Completed", variable=show_completed, command=lambda: refresh()).pack(side=tk.RIGHT)
+    ttk.Checkbutton(filters, text="완료 항목 표시", variable=show_completed, command=lambda: refresh()).pack(side=tk.RIGHT)
 
     # Treeview for tasks
     columns = ("id", "title", "priority", "category", "due_date", "completed")
@@ -48,11 +48,11 @@ def build_todo_tab(parent, todo_manager: TodoManager):
 
     headings = {
         "id": "ID",
-        "title": "Title",
-        "priority": "Priority",
-        "category": "Category",
-        "due_date": "Due",
-        "completed": "Done",
+        "title": "제목",
+        "priority": "우선순위",
+        "category": "카테고리",
+        "due_date": "마감",
+        "completed": "완료",
     }
     for col in columns:
         tree.heading(col, text=headings[col])
@@ -73,6 +73,7 @@ def build_todo_tab(parent, todo_manager: TodoManager):
         for iid in tree.get_children(""):
             vals = tree.item(iid, "values")
             data.append((iid, vals))
+
         def keyfunc(item):
             vals = item[1]
             idx = columns.index(col)
@@ -83,8 +84,9 @@ def build_todo_tab(parent, todo_manager: TodoManager):
                 except Exception:
                     return 0
             if col == "completed":
-                return 0 if v == "✓" else 1
+                return 0 if v == "완료" else 1
             return (v or "").lower()
+
         data.sort(key=keyfunc, reverse=reverse)
         for index, (iid, _vals) in enumerate(data):
             tree.move(iid, "", index)
@@ -100,7 +102,7 @@ def build_todo_tab(parent, todo_manager: TodoManager):
 
     def _categories_from(rows: List[dict]) -> List[str]:
         cats = sorted({(r.get("category") or "General") for r in rows})
-        return ["All"] + cats
+        return ["전체"] + cats
 
     def refresh():
         # Preserve selection id
@@ -112,7 +114,7 @@ def build_todo_tab(parent, todo_manager: TodoManager):
         cb_cat.configure(values=_categories_from(rows))
 
         q = (search_var.get() or "").strip().lower()
-        pri = priority_var.get()
+        pri_display = priority_var.get()
         cat = category_var.get()
         show = show_completed.get()
 
@@ -120,9 +122,12 @@ def build_todo_tab(parent, todo_manager: TodoManager):
             if q:
                 if q not in (row.get('title') or '').lower() and q not in (row.get('description') or '').lower():
                     return False
-            if pri and pri != "All" and (row.get('priority') or "").lower() != pri.lower():
-                return False
-            if cat and cat != "All" and (row.get('category') or "General") != cat:
+            if pri_display and pri_display != "전체":
+                pri_map = {"높음": "high", "보통": "medium", "낮음": "low"}
+                pri_canon = pri_map.get(pri_display, pri_display).lower()
+                if (row.get('priority') or "").lower() != pri_canon:
+                    return False
+            if cat and cat != "전체" and (row.get('category') or "General") != cat:
                 return False
             if not show and row.get('completed'):
                 return False
@@ -144,7 +149,7 @@ def build_todo_tab(parent, todo_manager: TodoManager):
                     row.get('priority') or '',
                     row.get('category') or 'General',
                     row.get('due_date') or '',
-                    '✓' if done else ''
+                    '완료' if done else ''
                 ),
                 tags=tuple(tags),
             )
@@ -185,33 +190,35 @@ def _selected_id(tree: ttk.Treeview) -> Optional[int]:
 
 
 def _add_task(root, todo_manager: TodoManager, tree: ttk.Treeview):
-    title = simpledialog.askstring("New Task", "Title:", parent=root)
+    title = simpledialog.askstring("새 작업", "제목:", parent=root)
     if not title:
         return
-    description = simpledialog.askstring("New Task", "Description:", parent=root) or ""
-    priority = simpledialog.askstring("New Task", "Priority (High/Medium/Low):", parent=root) or "Medium"
-    category = simpledialog.askstring("New Task", "Category:", parent=root) or "General"
-    due_date = simpledialog.askstring("New Task", "Due date (YYYY-MM-DD) or blank:", parent=root) or None
-    todo_manager.add_todo(title, description, priority, category, due_date)
+    description = simpledialog.askstring("새 작업", "설명:", parent=root) or ""
+    priority = simpledialog.askstring("새 작업", "우선순위 (높음/보통/낮음):", parent=root) or "Medium"
+    category = simpledialog.askstring("새 작업", "카테고리:", parent=root) or "General"
+    due_date = simpledialog.askstring("새 작업", "마감일 (YYYY-MM-DD) 또는 공란:", parent=root) or None
+    pri_norm = {"높음": "High", "보통": "Medium", "낮음": "Low"}.get(priority, priority)
+    todo_manager.add_todo(title, description, pri_norm, category, due_date)
     root.refresh()  # type: ignore
 
 
 def _edit_task(root, todo_manager: TodoManager, tree: ttk.Treeview):
     tid = _selected_id(tree)
     if not tid:
-        messagebox.showinfo("Edit", "Select a task first.")
+        messagebox.showinfo("수정", "먼저 작업을 선택하세요.")
         return
     todo = todo_manager.get_todo(tid)
     if not todo:
         return
-    title = simpledialog.askstring("Edit Task", "Title:", initialvalue=todo['title'], parent=root)
+    title = simpledialog.askstring("작업 수정", "제목:", initialvalue=todo['title'], parent=root)
     if not title:
         return
-    description = simpledialog.askstring("Edit Task", "Description:", initialvalue=todo.get('description',''), parent=root) or ""
-    priority = simpledialog.askstring("Edit Task", "Priority (High/Medium/Low):", initialvalue=todo.get('priority','Medium'), parent=root) or "Medium"
-    category = simpledialog.askstring("Edit Task", "Category:", initialvalue=todo.get('category','General'), parent=root) or "General"
-    due_date = simpledialog.askstring("Edit Task", "Due date (YYYY-MM-DD) or blank:", initialvalue=todo.get('due_date') or '', parent=root) or None
-    todo_manager.update_todo(tid, title=title, description=description, priority=priority, category=category, due_date=due_date)
+    description = simpledialog.askstring("작업 수정", "설명:", initialvalue=todo.get('description',''), parent=root) or ""
+    priority = simpledialog.askstring("작업 수정", "우선순위 (높음/보통/낮음):", initialvalue=todo.get('priority','Medium'), parent=root) or "Medium"
+    category = simpledialog.askstring("작업 수정", "카테고리:", initialvalue=todo.get('category','General'), parent=root) or "General"
+    due_date = simpledialog.askstring("작업 수정", "마감일 (YYYY-MM-DD) 또는 공란:", initialvalue=todo.get('due_date') or '', parent=root) or None
+    pri_norm = {"높음": "High", "보통": "Medium", "낮음": "Low"}.get(priority, priority)
+    todo_manager.update_todo(tid, title=title, description=description, priority=pri_norm, category=category, due_date=due_date)
     root.refresh()  # type: ignore
 
 
@@ -232,3 +239,4 @@ def _toggle_complete(todo_manager: TodoManager, tree: ttk.Treeview):
         return
     todo_manager.set_completed(tid, not bool(todo['completed']))
     tree.master.refresh()  # type: ignore
+

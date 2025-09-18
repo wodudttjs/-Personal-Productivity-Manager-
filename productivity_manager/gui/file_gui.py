@@ -14,7 +14,7 @@ def build_file_tab(parent):
 
     path_var = tk.StringVar(value=os.path.expanduser("~"))
     ttk.Entry(top, textvariable=path_var, width=80).pack(side=tk.LEFT, padx=4)
-    ttk.Button(top, text="Browse", command=lambda: _choose_dir(path_var)).pack(side=tk.LEFT)
+    ttk.Button(top, text="찾아보기", command=lambda: _choose_dir(path_var)).pack(side=tk.LEFT)
 
     actions = ttk.Frame(frame)
     actions.pack(fill=tk.X, padx=8)
@@ -27,22 +27,22 @@ def build_file_tab(parent):
 
     ttk.Button(
         actions,
-        text="Organize",
+        text="정리",
         command=lambda: _busy_run(frame, output, prog, organize_directory, path_var.get()),
     ).pack(side=tk.LEFT, padx=4)
     ttk.Button(
         actions,
-        text="Find Duplicates",
+        text="중복 찾기",
         command=lambda: _busy_run(frame, output, prog, _list_duplicates, path_var.get()),
     ).pack(side=tk.LEFT, padx=4)
     ttk.Button(
         actions,
-        text="Batch Rename",
+        text="일괄 이름변경",
         command=lambda: _busy_run(frame, output, prog, _batch_rename, path_var.get()),
     ).pack(side=tk.LEFT, padx=4)
     ttk.Button(
         actions,
-        text="Clear",
+        text="지우기",
         command=lambda: output.delete("1.0", tk.END),
     ).pack(side=tk.LEFT, padx=4)
 
@@ -69,7 +69,7 @@ def _busy_run(root: tk.Misc, output: ScrolledText, prog: ttk.Progressbar, func, 
             # If func is a wrapper like _list_duplicates/_batch_rename, it already wrote output
             pass
     except Exception as e:
-        output.insert(tk.END, f"Error: {e}\n")
+        output.insert(tk.END, f"오류: {e}\n")
     finally:
         prog.stop()
 
@@ -79,13 +79,13 @@ def _list_duplicates(output: ScrolledText, directory: str):
     try:
         dups = find_duplicates(directory)
         if not dups:
-            output.insert(tk.END, "No duplicates found.\n")
+            output.insert(tk.END, "중복 파일이 없습니다.\n")
         for h, paths in dups:
-            output.insert(tk.END, f"Hash {h[:10]}...\n")
+            output.insert(tk.END, f"해시 {h[:10]}...\n")
             for p in paths:
                 output.insert(tk.END, f"  - {p}\n")
     except Exception as e:
-        output.insert(tk.END, f"Error: {e}\n")
+        output.insert(tk.END, f"오류: {e}\n")
 
 
 def _batch_rename(output: ScrolledText, directory: str):
@@ -95,4 +95,4 @@ def _batch_rename(output: ScrolledText, directory: str):
         for line in logs:
             output.insert(tk.END, line + "\n")
     except Exception as e:
-        output.insert(tk.END, f"Error: {e}\n")
+        output.insert(tk.END, f"오류: {e}\n")

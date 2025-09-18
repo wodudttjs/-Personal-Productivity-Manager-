@@ -1,5 +1,5 @@
 import json
-from typing import List, Dict, Any
+from typing import List, Dict, Any, Tuple
 
 import requests
 from bs4 import BeautifulSoup
@@ -42,6 +42,69 @@ def get_weather(city: str = "Seoul", provider: str = "wttr.in", api_key: str = "
         return {"city": city, "temp_c": None, "description": "N/A"}
 
 
+def _geocode_city(city: str) -> Tuple[float, float, str]:
+    """Return (lat, lon, display_name) using Open-Meteo geocoding."""
+    try:
+        r = requests.get(
+            "https://geocoding-api.open-meteo.com/v1/search",
+            params={"name": city, "count": 1, "language": "ko", "format": "json"},
+            timeout=10,
+        )
+        r.raise_for_status()
+        data = r.json()
+        res = (data.get("results") or [])[0]
+        lat = float(res["latitude"])  # type: ignore[index]
+        lon = float(res["longitude"])  # type: ignore[index]
+        name = str(res.get("name") or city)
+        country = str(res.get("country") or "")
+        display = f"{name}{' ' + country if country else ''}"
+        return lat, lon, display
+    except Exception:
+        return 0.0, 0.0, city
+
+
+def get_weather_weekly(city: str = "Seoul") -> Dict[str, Any]:
+    """Fetch last 7 days daily weather for the city and return structured data.
+
+    Uses Open-Meteo API without API key.
+    """
+    lat, lon, display = _geocode_city(city)
+    if lat == 0.0 and lon == 0.0:
+        return {"city": display, "daily": []}
+    try:
+        r = requests.get(
+            "https://api.open-meteo.com/v1/forecast",
+            params={
+                "latitude": lat,
+                "longitude": lon,
+                "past_days": 7,
+                "forecast_days": 0,
+                "daily": "temperature_2m_max,temperature_2m_min,temperature_2m_mean,precipitation_sum",
+                "timezone": "auto",
+            },
+            timeout=10,
+        )
+        r.raise_for_status()
+        dj = r.json().get("daily", {})
+        times = dj.get("time", [])
+        tmax = dj.get("temperature_2m_max", [])
+        tmin = dj.get("temperature_2m_min", [])
+        tavg = dj.get("temperature_2m_mean", [])
+        prcp = dj.get("precipitation_sum", [])
+        out: List[Dict[str, Any]] = []
+        for i in range(min(len(times), len(tavg))):
+            out.append({
+                "date": times[i],
+                "tmin": tmin[i] if i < len(tmin) else None,
+                "tmax": tmax[i] if i < len(tmax) else None,
+                "tavg": tavg[i],
+                "precip": prcp[i] if i < len(prcp) else None,
+            })
+        return {"city": display, "daily": out}
+    except Exception:
+        return {"city": display, "daily": []}
+
+
 def get_exchange_rates(base: str = "USD") -> Dict[str, float]:
     try:
         r = requests.get(f"https://api.exchangerate.host/latest?base={base}", timeout=10)
@@ -68,4 +131,3 @@ def read_rss(url: str, limit: int = 10) -> List[Dict[str, str]]:
         return out
     except Exception:
         return []
-

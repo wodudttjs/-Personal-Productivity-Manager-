@@ -11,7 +11,7 @@ def build_timer_tab(parent, timer: Timer, todo_manager: TodoManager):
     top = ttk.Frame(frame)
     top.pack(fill=tk.X, padx=8, pady=8)
 
-    ttk.Label(top, text="Task:").pack(side=tk.LEFT)
+    ttk.Label(top, text="작업:").pack(side=tk.LEFT)
     tasks = todo_manager.list_todos()
     task_choices = [f"{t['id']}: {t['title']}" for t in tasks]
     selected = tk.StringVar(value=task_choices[0] if task_choices else "")
@@ -45,7 +45,7 @@ def build_timer_tab(parent, timer: Timer, todo_manager: TodoManager):
     def on_start():
         val = selected.get()
         if not val:
-            messagebox.showinfo("Start Timer", "Please select a task to track.")
+            messagebox.showinfo("타이머 시작", "추적할 작업을 선택하세요.")
             return
         if ":" in val:
             tid = int(val.split(":", 1)[0])
@@ -57,16 +57,16 @@ def build_timer_tab(parent, timer: Timer, todo_manager: TodoManager):
     def on_stop():
         entry_id = timer.stop()
         running["flag"] = False
-        messagebox.showinfo("Time Tracked", f"Saved time entry #{entry_id}")
+        messagebox.showinfo("시간 저장됨", f"시간 기록 #{entry_id} 저장 완료")
 
     def on_reset():
         timer.reset()
         running["flag"] = False
         elapsed_var.set("00:00:00")
 
-    ttk.Button(buttons, text="Start", command=on_start).pack(side=tk.LEFT, padx=4)
-    ttk.Button(buttons, text="Stop", command=on_stop).pack(side=tk.LEFT, padx=4)
-    ttk.Button(buttons, text="Reset", command=on_reset).pack(side=tk.LEFT, padx=4)
+    ttk.Button(buttons, text="시작", command=on_start).pack(side=tk.LEFT, padx=4)
+    ttk.Button(buttons, text="정지", command=on_stop).pack(side=tk.LEFT, padx=4)
+    ttk.Button(buttons, text="리셋", command=on_reset).pack(side=tk.LEFT, padx=4)
 
     # Space toggles start/stop
     def _toggle_space(event=None):

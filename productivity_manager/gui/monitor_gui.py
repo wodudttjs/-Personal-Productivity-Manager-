@@ -9,9 +9,9 @@ def build_monitor_tab(parent):
 
     labels = {
         "cpu": tk.StringVar(value="CPU: 0%"),
-        "mem": tk.StringVar(value="Memory: 0%"),
-        "disk": tk.StringVar(value="Disk: 0%"),
-        "net": tk.StringVar(value="Network: 0 B / 0 B"),
+        "mem": tk.StringVar(value="메모리: 0%"),
+        "disk": tk.StringVar(value="디스크: 0%"),
+        "net": tk.StringVar(value="네트워크: 0 B / 0 B"),
     }
 
     # CPU
@@ -41,8 +41,8 @@ def build_monitor_tab(parent):
         dsk = float(stats.get('disk_percent', 0.0))
 
         labels["cpu"].set(f"CPU: {cpu:.1f}%")
-        labels["mem"].set(f"Memory: {mem:.1f}%")
-        labels["disk"].set(f"Disk: {dsk:.1f}%")
+        labels["mem"].set(f"메모리: {mem:.1f}%")
+        labels["disk"].set(f"디스크: {dsk:.1f}%")
 
         cpu_pb['value'] = cpu
         mem_pb['value'] = mem
@@ -53,7 +53,7 @@ def build_monitor_tab(parent):
         ds = max(sent - state["prev_sent"], 0)
         dr = max(recv - state["prev_recv"], 0)
         state["prev_sent"], state["prev_recv"] = sent, recv
-        labels["net"].set(f"Network: {human_bytes(ds)}/s up, {human_bytes(dr)}/s down")
+        labels["net"].set(f"네트워크: {human_bytes(ds)}/s 업, {human_bytes(dr)}/s 다운")
         frame.after(1000, tick)
 
     def human_bytes(n: float) -> str:
