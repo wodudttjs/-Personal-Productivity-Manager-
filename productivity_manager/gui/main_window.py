@@ -1,11 +1,12 @@
 import os
 import tkinter as tk
-from tkinter import ttk
+from tkinter import ttk, messagebox
 
 from database.db_manager import DBManager
 from modules.todo_manager import TodoManager
 from modules.time_tracker import Timer
-from utils.config import load_config
+from utils.config import load_config, save_config
+from .theme import apply_theme
 
 from .todo_gui import build_todo_tab
 from .timer_gui import build_timer_tab
@@ -24,8 +25,21 @@ def run_app(base_dir: str, db: DBManager) -> None:
     except Exception:
         pass
 
+    # Theme
+    ui_mode = cfg.get("ui", {}).get("theme", "light")
+    apply_theme(root, ui_mode)
+
+    # Menubar and theme toggle
+    _setup_menubar(root, cfg, base_dir)
+
+    # Main content
     notebook = ttk.Notebook(root)
     notebook.pack(fill=tk.BOTH, expand=True)
+
+    # Status bar
+    status_var = tk.StringVar(value="Ready")
+    status_bar = ttk.Label(root, textvariable=status_var, anchor="w")
+    status_bar.pack(fill=tk.X, side=tk.BOTTOM)
 
     # Managers
     todo_manager = TodoManager(db)
@@ -43,5 +57,58 @@ def run_app(base_dir: str, db: DBManager) -> None:
     for name, frame in tabs.items():
         notebook.add(frame, text=name)
 
+    def on_tab_changed(event=None):
+        try:
+            idx = notebook.index(notebook.select())
+            text = notebook.tab(idx, 'text')
+            status_var.set(f"Active: {text}")
+        except Exception:
+            status_var.set("Ready")
+
+    notebook.bind("<<NotebookTabChanged>>", on_tab_changed)
+    on_tab_changed()
+
+    def on_close():
+        try:
+            geo = root.winfo_geometry().split('+', 1)[0]
+            cfg.setdefault("ui", {})["window_size"] = geo
+            save_config(base_dir, cfg)
+        except Exception:
+            pass
+        root.destroy()
+
+    root.protocol("WM_DELETE_WINDOW", on_close)
+
     root.mainloop()
 
+
+def _setup_menubar(root: tk.Misc, cfg: dict, base_dir: str) -> None:
+    menubar = tk.Menu(root)
+
+    file_menu = tk.Menu(menubar, tearoff=False)
+    file_menu.add_command(label="Exit", command=root.destroy, accelerator="Alt+F4")
+    menubar.add_cascade(label="File", menu=file_menu)
+
+    view_menu = tk.Menu(menubar, tearoff=False)
+    theme_var = tk.StringVar(value=cfg.get("ui", {}).get("theme", "light"))
+
+    def _set_theme(mode: str):
+        apply_theme(root, mode)
+        cfg.setdefault("ui", {})["theme"] = mode
+        save_config(base_dir, cfg)
+
+    view_menu.add_radiobutton(label="Light", value="light", variable=theme_var, command=lambda: _set_theme("light"))
+    view_menu.add_radiobutton(label="Dark", value="dark", variable=theme_var, command=lambda: _set_theme("dark"))
+    menubar.add_cascade(label="View", menu=view_menu)
+
+    help_menu = tk.Menu(menubar, tearoff=False)
+    help_menu.add_command(
+        label="About",
+        command=lambda: messagebox.showinfo(
+            "About",
+            "Personal Productivity Manager\nA simple, streamlined UI built with Tkinter.",
+        ),
+    )
+    menubar.add_cascade(label="Help", menu=help_menu)
+
+    root.configure(menu=menubar)

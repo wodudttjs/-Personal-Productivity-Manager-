@@ -21,7 +21,6 @@ def main():
     # Launch GUI
     run_app(base_dir, db)
 
-
 if __name__ == '__main__':
     try:
         main()

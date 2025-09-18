@@ -2,7 +2,7 @@
   "version": 1,
   "ui": {
     "theme": "light",
-    "window_size": "1000x700"
+    "window_size": "1000x754"
   },
   "web": {
     "weather_provider": "wttr.in",
@@ -21,4 +21,3 @@
     "todo_due_alert_minutes": 60
   }
 }
-

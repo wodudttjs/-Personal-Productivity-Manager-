@@ -1,6 +1,6 @@
 import tkinter as tk
 from tkinter import ttk, messagebox, simpledialog
-from typing import Optional
+from typing import Optional, List, Dict
 
 from modules.todo_manager import TodoManager
 
@@ -10,7 +10,7 @@ def build_todo_tab(parent, todo_manager: TodoManager):
 
     # Controls
     controls = ttk.Frame(frame)
-    controls.pack(fill=tk.X, padx=8, pady=8)
+    controls.pack(fill=tk.X, padx=8, pady=(8, 4))
 
     btn_add = ttk.Button(controls, text="Add", command=lambda: _add_task(frame, todo_manager, tree))
     btn_add.pack(side=tk.LEFT, padx=4)
@@ -21,24 +21,155 @@ def build_todo_tab(parent, todo_manager: TodoManager):
     btn_toggle = ttk.Button(controls, text="Toggle Complete", command=lambda: _toggle_complete(todo_manager, tree))
     btn_toggle.pack(side=tk.LEFT, padx=4)
 
+    # Filters
+    filters = ttk.Frame(frame)
+    filters.pack(fill=tk.X, padx=8, pady=(0, 8))
+    search_var = tk.StringVar()
+    ttk.Label(filters, text="Search:").pack(side=tk.LEFT)
+    ent = ttk.Entry(filters, textvariable=search_var, width=30)
+    ent.pack(side=tk.LEFT, padx=6)
+
+    priority_var = tk.StringVar(value="All")
+    ttk.Label(filters, text="Priority:").pack(side=tk.LEFT, padx=(12, 0))
+    cb_pri = ttk.Combobox(filters, values=["All", "High", "Medium", "Low"], textvariable=priority_var, width=10, state="readonly")
+    cb_pri.pack(side=tk.LEFT, padx=4)
+
+    category_var = tk.StringVar(value="All")
+    ttk.Label(filters, text="Category:").pack(side=tk.LEFT, padx=(12, 0))
+    cb_cat = ttk.Combobox(filters, values=["All"], textvariable=category_var, width=16, state="readonly")
+    cb_cat.pack(side=tk.LEFT, padx=4)
+
+    show_completed = tk.BooleanVar(value=True)
+    ttk.Checkbutton(filters, text="Show Completed", variable=show_completed, command=lambda: refresh()).pack(side=tk.RIGHT)
+
     # Treeview for tasks
     columns = ("id", "title", "priority", "category", "due_date", "completed")
     tree = ttk.Treeview(frame, columns=columns, show='headings', selectmode='browse')
+
+    headings = {
+        "id": "ID",
+        "title": "Title",
+        "priority": "Priority",
+        "category": "Category",
+        "due_date": "Due",
+        "completed": "Done",
+    }
     for col in columns:
-        tree.heading(col, text=col)
-        tree.column(col, width=100)
-    tree.column("title", width=240)
+        tree.heading(col, text=headings[col])
+        tree.column(col, width=100, anchor=(tk.E if col in ("priority", "completed") else tk.W))
+    tree.column("title", width=280, anchor=tk.W)
+    tree.column("id", width=60, anchor=tk.E)
 
     vsb = ttk.Scrollbar(frame, orient="vertical", command=tree.yview)
     tree.configure(yscrollcommand=vsb.set)
-    tree.pack(side=tk.LEFT, fill=tk.BOTH, expand=True, padx=(8,0), pady=(0,8))
-    vsb.pack(side=tk.LEFT, fill=tk.Y, pady=(0,8))
+    tree.pack(side=tk.LEFT, fill=tk.BOTH, expand=True, padx=(8, 0), pady=(0, 8))
+    vsb.pack(side=tk.LEFT, fill=tk.Y, pady=(0, 8))
+
+    sort_state: Dict[str, bool] = {}
+
+    def _sort_by(col: str):
+        reverse = sort_state.get(col, False)
+        data = []
+        for iid in tree.get_children(""):
+            vals = tree.item(iid, "values")
+            data.append((iid, vals))
+        def keyfunc(item):
+            vals = item[1]
+            idx = columns.index(col)
+            v = vals[idx]
+            if col == "id":
+                try:
+                    return int(v)
+                except Exception:
+                    return 0
+            if col == "completed":
+                return 0 if v == "✓" else 1
+            return (v or "").lower()
+        data.sort(key=keyfunc, reverse=reverse)
+        for index, (iid, _vals) in enumerate(data):
+            tree.move(iid, "", index)
+        sort_state[col] = not reverse
+
+    for col in columns:
+        tree.heading(col, text=headings[col], command=lambda c=col: _sort_by(c))
+
+    # Tag styles
+    tree.tag_configure("completed", foreground="#808080")
+    tree.tag_configure("odd", background="")
+    tree.tag_configure("even", background="")
+
+    def _categories_from(rows: List[dict]) -> List[str]:
+        cats = sorted({(r.get("category") or "General") for r in rows})
+        return ["All"] + cats
 
     def refresh():
-        for i in tree.get_children():
+        # Preserve selection id
+        current_sel = _selected_id(tree)
+        for i in tree.get_children(""):
             tree.delete(i)
-        for row in todo_manager.list_todos():
-            tree.insert('', tk.END, values=(row['id'], row['title'], row['priority'], row['category'], row['due_date'] or '', 'Yes' if row['completed'] else 'No'))
+        rows = todo_manager.list_todos()
+        # Update category choices
+        cb_cat.configure(values=_categories_from(rows))
+
+        q = (search_var.get() or "").strip().lower()
+        pri = priority_var.get()
+        cat = category_var.get()
+        show = show_completed.get()
+
+        def _match(row):
+            if q:
+                if q not in (row.get('title') or '').lower() and q not in (row.get('description') or '').lower():
+                    return False
+            if pri and pri != "All" and (row.get('priority') or "").lower() != pri.lower():
+                return False
+            if cat and cat != "All" and (row.get('category') or "General") != cat:
+                return False
+            if not show and row.get('completed'):
+                return False
+            return True
+
+        filtered = [r for r in rows if _match(r)]
+        for idx, row in enumerate(filtered):
+            done = bool(row.get('completed'))
+            tags = []
+            if done:
+                tags.append("completed")
+            tags.append("even" if idx % 2 == 0 else "odd")
+            tree.insert(
+                '',
+                tk.END,
+                values=(
+                    row['id'],
+                    row['title'],
+                    row.get('priority') or '',
+                    row.get('category') or 'General',
+                    row.get('due_date') or '',
+                    '✓' if done else ''
+                ),
+                tags=tuple(tags),
+            )
+
+        # Restore selection if possible
+        if current_sel is not None:
+            for iid in tree.get_children(""):
+                vals = tree.item(iid, 'values')
+                try:
+                    if int(vals[0]) == current_sel:
+                        tree.selection_set(iid)
+                        tree.see(iid)
+                        break
+                except Exception:
+                    pass
+
+    # Filter events
+    ent.bind("<KeyRelease>", lambda e: refresh())
+    cb_pri.bind("<<ComboboxSelected>>", lambda e: refresh())
+    cb_cat.bind("<<ComboboxSelected>>", lambda e: refresh())
+
+    # Interactions
+    tree.bind("<Double-1>", lambda e: _edit_task(frame, todo_manager, tree))
+    frame.bind_all("<Control-n>", lambda e: _add_task(frame, todo_manager, tree))
+    frame.bind_all("<Delete>", lambda e: _delete_task(todo_manager, tree))
 
     frame.refresh = refresh  # type: ignore
     refresh()
@@ -101,4 +232,3 @@ def _toggle_complete(todo_manager: TodoManager, tree: ttk.Treeview):
         return
     todo_manager.set_completed(tid, not bool(todo['completed']))
     tree.master.refresh()  # type: ignore
-

@@ -15,11 +15,18 @@ def build_timer_tab(parent, timer: Timer, todo_manager: TodoManager):
     tasks = todo_manager.list_todos()
     task_choices = [f"{t['id']}: {t['title']}" for t in tasks]
     selected = tk.StringVar(value=task_choices[0] if task_choices else "")
-    cb = ttk.Combobox(top, values=task_choices, textvariable=selected, width=50)
+    cb = ttk.Combobox(top, values=task_choices, textvariable=selected, width=60, state="readonly")
     cb.pack(side=tk.LEFT, padx=6)
 
     elapsed_var = tk.StringVar(value="00:00:00")
-    ttk.Label(top, textvariable=elapsed_var).pack(side=tk.RIGHT)
+    lbl_elapsed = ttk.Label(top, textvariable=elapsed_var)
+    lbl_elapsed.pack(side=tk.RIGHT)
+    try:
+        lbl_elapsed.configure(font=("Segoe UI", 24, "bold"))
+    except Exception:
+        pass
+
+    ttk.Separator(frame, orient="horizontal").pack(fill=tk.X, padx=8, pady=(0, 8))
 
     buttons = ttk.Frame(frame)
     buttons.pack(fill=tk.X, padx=8)
@@ -37,6 +44,9 @@ def build_timer_tab(parent, timer: Timer, todo_manager: TodoManager):
 
     def on_start():
         val = selected.get()
+        if not val:
+            messagebox.showinfo("Start Timer", "Please select a task to track.")
+            return
         if ":" in val:
             tid = int(val.split(":", 1)[0])
             timer.task_id = tid
@@ -58,5 +68,12 @@ def build_timer_tab(parent, timer: Timer, todo_manager: TodoManager):
     ttk.Button(buttons, text="Stop", command=on_stop).pack(side=tk.LEFT, padx=4)
     ttk.Button(buttons, text="Reset", command=on_reset).pack(side=tk.LEFT, padx=4)
 
-    return frame
+    # Space toggles start/stop
+    def _toggle_space(event=None):
+        if running["flag"]:
+            on_stop()
+        else:
+            on_start()
+    frame.bind_all("<space>", _toggle_space)
 
+    return frame
