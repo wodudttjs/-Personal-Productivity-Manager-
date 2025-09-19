@@ -1,5 +1,6 @@
 import os
 import sqlite3
+from types import SimpleNamespace
 from typing import Iterable, Optional
 
 
@@ -7,11 +8,15 @@ class DBManager:
     def __init__(self, db_path: str):
         self.db_path = db_path
         os.makedirs(os.path.dirname(db_path), exist_ok=True)
-        self.conn = sqlite3.connect(self.db_path)
-        self.conn.row_factory = sqlite3.Row
+
+    def _connect(self) -> sqlite3.Connection:
+        conn = sqlite3.connect(self.db_path)
+        conn.row_factory = sqlite3.Row
+        return conn
 
     def initialize(self) -> None:
-        cur = self.conn.cursor()
+        conn = self._connect()
+        cur = conn.cursor()
         # Todos table
         cur.execute(
             """
@@ -48,22 +53,32 @@ class DBManager:
         # Indexes
         cur.execute("CREATE INDEX IF NOT EXISTS idx_todos_completed ON todos(completed)")
         cur.execute("CREATE INDEX IF NOT EXISTS idx_time_task ON time_entries(task_id)")
-        self.conn.commit()
+        conn.commit()
+        conn.close()
 
     def execute(self, sql: str, params: Iterable = ()):  # for writes
-        cur = self.conn.cursor()
+        conn = self._connect()
+        cur = conn.cursor()
         cur.execute(sql, tuple(params))
-        self.conn.commit()
-        return cur
+        conn.commit()
+        lastrowid = cur.lastrowid
+        conn.close()
+        # Return a lightweight object exposing lastrowid for compatibility
+        return SimpleNamespace(lastrowid=lastrowid)
 
     def query(self, sql: str, params: Iterable = ()) -> Iterable[sqlite3.Row]:  # for reads
-        cur = self.conn.cursor()
+        conn = self._connect()
+        cur = conn.cursor()
         cur.execute(sql, tuple(params))
-        return cur.fetchall()
+        rows = cur.fetchall()
+        conn.close()
+        return rows
 
     def close(self):
-        try:
-            self.conn.close()
-        except Exception:
-            pass
+        # No persistent connection kept; nothing to close.
+        return None
 
+    # Ensure connections are not left open (helps on Windows file locks)
+    def __del__(self):  # pragma: no cover - destructor behavior
+        # Connections are per-operation now; nothing to do.
+        pass

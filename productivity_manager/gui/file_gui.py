@@ -3,6 +3,8 @@ import tkinter as tk
 from tkinter import ttk, filedialog
 from tkinter.scrolledtext import ScrolledText
 
+import threading
+
 from modules.file_organizer import organize_directory, find_duplicates, batch_rename
 
 
@@ -56,43 +58,51 @@ def _choose_dir(path_var):
 
 
 def _busy_run(root: tk.Misc, output: ScrolledText, prog: ttk.Progressbar, func, *args):
+    """Run potentially long operation in a background thread and update UI when done."""
     output.delete("1.0", tk.END)
-    try:
-        prog.start(10)
-        root.update_idletasks()
-        result = func(*args)
-        # Support both list-returning and specialized helpers
-        if isinstance(result, list):
-            for line in result:
-                output.insert(tk.END, str(line) + "\n")
-        else:
-            # If func is a wrapper like _list_duplicates/_batch_rename, it already wrote output
-            pass
-    except Exception as e:
-        output.insert(tk.END, f"오류: {e}\n")
-    finally:
-        prog.stop()
+    prog.start(10)
+    root.update_idletasks()
+
+    def _worker():
+        try:
+            result = func(*args)
+            err = None
+        except Exception as e:  # pragma: no cover - UI path
+            result = None
+            err = e
+
+        def _done():
+            try:
+                if err is not None:
+                    output.insert(tk.END, f"오류: {err}\n")
+                else:
+                    if isinstance(result, list):
+                        for line in result:
+                            output.insert(tk.END, str(line) + "\n")
+                    elif result is not None:
+                        output.insert(tk.END, str(result) + "\n")
+            finally:
+                prog.stop()
+
+        root.after(0, _done)
+
+    t = threading.Thread(target=_worker, daemon=True)
+    t.start()
 
 
-def _list_duplicates(output: ScrolledText, directory: str):
-    output.delete("1.0", tk.END)
-    try:
-        dups = find_duplicates(directory)
-        if not dups:
-            output.insert(tk.END, "중복 파일이 없습니다.\n")
-        for h, paths in dups:
-            output.insert(tk.END, f"해시 {h[:10]}...\n")
-            for p in paths:
-                output.insert(tk.END, f"  - {p}\n")
-    except Exception as e:
-        output.insert(tk.END, f"오류: {e}\n")
+def _list_duplicates(directory: str):
+    """Return lines describing duplicates rather than touching UI directly."""
+    lines = []
+    dups = find_duplicates(directory)
+    if not dups:
+        lines.append("중복 파일이 없습니다.")
+        return lines
+    for h, paths in dups:
+        lines.append(f"해시 {h[:10]}...")
+        for p in paths:
+            lines.append(f"  - {p}")
+    return lines
 
 
-def _batch_rename(output: ScrolledText, directory: str):
-    output.delete("1.0", tk.END)
-    try:
-        logs = batch_rename(directory)
-        for line in logs:
-            output.insert(tk.END, line + "\n")
-    except Exception as e:
-        output.insert(tk.END, f"오류: {e}\n")
+def _batch_rename(directory: str):
+    return batch_rename(directory)
