@@ -44,6 +44,37 @@ See the `productivity_manager/` folder for source code, assets, and data directo
 ## Quick Start
 
 - Install Python 3.8+
-- Install dependencies: `pip install -r productivity_manager/requirements.txt`
-- Run: `python productivity_manager/main.py`
+- Option A — run from source:
+  - Install deps: `pip install -r productivity_manager/requirements.txt`
+  - Run: `python -m productivity_manager.main`
+- Option B — install as a package (recommended):
+  - Build wheel: `python -m build` (requires `pip install build`)
+  - Install: `pip install dist/personal_productivity_manager-*.whl`
+  - Launch: `productivity-manager` (or `ppm`)
 
+## Development
+
+- Create venv: `python -m venv .venv && .venv\Scripts\activate` (Windows)
+- Install dev tools: `pip install -r productivity_manager/requirements.txt`
+- Run tests: `python -m unittest discover -s productivity_manager/tests -t .`
+- Lint/format: choose your tools (e.g., ruff/black) as preferred
+
+## Packaging and Distribution
+
+- PEP 621 metadata defined in `pyproject.toml`
+- Console script entry points: `productivity-manager`, `ppm`
+- User data (config/db) stored in an OS‑proper location via `platformdirs`.
+  - Windows: `%APPDATA%/Personal Productivity Manager`
+  - macOS: `~/Library/Application Support/Personal Productivity Manager`
+  - Linux: `~/.local/share/Personal Productivity Manager`
+
+### Build Wheel / sdist
+
+- `pip install build`
+- `python -m build`
+
+### Windows Executable (PyInstaller)
+
+- Ensure deps: `pip install -r productivity_manager/requirements.txt`
+- Build: `pyinstaller --clean -y productivity_manager.spec`
+- Output EXE at `dist/productivity-manager.exe`

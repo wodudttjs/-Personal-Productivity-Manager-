@@ -1,0 +1,47 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "personal-productivity-manager"
+version = "0.1.0"
+description = "All-in-one personal productivity app: todos, timer, file organizer, scraping, and monitoring."
+readme = "README.md"
+requires-python = ">=3.8"
+authors = [
+  { name = "Personal Productivity Manager Maintainers" }
+]
+keywords = ["productivity", "todo", "timer", "file-organizer", "tkinter"]
+dependencies = [
+  "requests>=2.28.0",
+  "beautifulsoup4>=4.11.0",
+  "matplotlib>=3.6.0",
+  "psutil>=5.9.0",
+  "schedule>=1.2.0",
+  "platformdirs>=3.10.0",
+]
+
+[project.scripts]
+productivity-manager = "productivity_manager.main:main"
+ppm = "productivity_manager.main:main"
+
+[project.urls]
+Homepage = "https://example.com/personal-productivity-manager"
+Repository = "https://example.com/personal-productivity-manager/repo"
+
+[tool.setuptools]
+include-package-data = true
+
+[tool.setuptools.packages.find]
+include = ["productivity_manager*"]
+
+[tool.setuptools.package-data]
+productivity_manager = [
+  "data/config.json",
+  "assets/**/*.*",
+]
+
+[tool.setuptools.exclude-package-data]
+productivity_manager = [
+  "data/*.db",
+]

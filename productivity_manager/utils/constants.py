@@ -12,4 +12,3 @@ FILE_CATEGORIES = {
     "Code": {".py", ".js", ".ts", ".json", ".html", ".css", ".yml", ".yaml", ".xml"},
     "Installers": {".exe", ".msi", ".dmg", ".pkg"},
 }
-

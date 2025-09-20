@@ -2,8 +2,8 @@ import os
 import tempfile
 import unittest
 
-from database.db_manager import DBManager
-from modules.todo_manager import TodoManager
+from productivity_manager.database.db_manager import DBManager
+from productivity_manager.modules.todo_manager import TodoManager
 
 
 class TestTodoCRUD(unittest.TestCase):

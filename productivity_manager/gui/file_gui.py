@@ -5,7 +5,7 @@ from tkinter.scrolledtext import ScrolledText
 
 import threading
 
-from modules.file_organizer import organize_directory, find_duplicates, batch_rename
+from ..modules.file_organizer import organize_directory, find_duplicates, batch_rename
 
 
 def build_file_tab(parent):

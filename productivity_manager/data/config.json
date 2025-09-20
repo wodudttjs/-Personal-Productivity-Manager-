@@ -1,8 +1,8 @@
 {
   "version": 1,
   "ui": {
-    "theme": "light",
-    "window_size": "1000x754"
+    "theme": "dark",
+    "window_size": "1000x619"
   },
   "web": {
     "weather_provider": "wttr.in",

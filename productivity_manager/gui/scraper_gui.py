@@ -4,8 +4,8 @@ import tkinter as tk
 from tkinter import ttk
 from tkinter.scrolledtext import ScrolledText
 
-from utils.config import load_config
-from modules.web_scraper import (
+from ..utils.config import load_config
+from ..modules.web_scraper import (
     get_news_headlines,
     get_weather,
     get_exchange_rates,
@@ -164,4 +164,3 @@ def _read_rss(output, url):
         output.after(0, done)
 
     threading.Thread(target=worker, daemon=True).start()
-

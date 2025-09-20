@@ -1,7 +1,7 @@
 import tkinter as tk
 from tkinter import ttk
 
-from modules.system_monitor import get_system_stats
+from ..modules.system_monitor import get_system_stats
 
 
 def build_monitor_tab(parent):

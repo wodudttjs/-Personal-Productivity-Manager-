@@ -2,7 +2,7 @@ import time
 from datetime import datetime
 from typing import Optional
 
-from database.db_manager import DBManager
+from ..database.db_manager import DBManager
 
 
 class Timer:
@@ -44,4 +44,3 @@ class Timer:
         if self._start_ts is None:
             return int(self._elapsed)
         return int(self._elapsed + (time.time() - self._start_ts))
-

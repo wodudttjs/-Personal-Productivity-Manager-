@@ -1,8 +1,8 @@
 import tkinter as tk
 from tkinter import ttk, messagebox
 
-from modules.time_tracker import Timer
-from modules.todo_manager import TodoManager
+from ..modules.time_tracker import Timer
+from ..modules.todo_manager import TodoManager
 
 
 def build_timer_tab(parent, timer: Timer, todo_manager: TodoManager):

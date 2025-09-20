@@ -3,8 +3,8 @@ import time
 import tempfile
 import unittest
 
-from database.db_manager import DBManager
-from modules.time_tracker import Timer
+from productivity_manager.database.db_manager import DBManager
+from productivity_manager.modules.time_tracker import Timer
 
 
 class TestTimer(unittest.TestCase):

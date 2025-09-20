@@ -2,7 +2,7 @@ import os
 import tempfile
 import unittest
 
-from modules.file_organizer import organize_directory, find_duplicates
+from productivity_manager.modules.file_organizer import organize_directory, find_duplicates
 
 
 class TestFileOrganizer(unittest.TestCase):

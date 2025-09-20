@@ -2,10 +2,10 @@ import os
 import tkinter as tk
 from tkinter import ttk, messagebox
 
-from database.db_manager import DBManager
-from modules.todo_manager import TodoManager
-from modules.time_tracker import Timer
-from utils.config import load_config, save_config
+from ..database.db_manager import DBManager
+from ..modules.todo_manager import TodoManager
+from ..modules.time_tracker import Timer
+from ..utils.config import load_config, save_config
 from .theme import apply_theme
 
 from .todo_gui import build_todo_tab

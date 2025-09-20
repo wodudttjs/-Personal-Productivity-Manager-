@@ -1,6 +1,6 @@
 from typing import List, Optional, Dict, Any
 
-from database.db_manager import DBManager
+from ..database.db_manager import DBManager
 
 
 class TodoManager:
@@ -55,4 +55,3 @@ class TodoManager:
         sql += " ORDER BY completed ASC, priority DESC, due_date IS NULL, due_date ASC, created_at DESC"
         rows = self.db.query(sql, params)
         return [dict(r) for r in rows]
-

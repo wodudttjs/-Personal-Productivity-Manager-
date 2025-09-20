@@ -4,7 +4,7 @@ import shutil
 from typing import Dict, List, Tuple, DefaultDict
 from collections import defaultdict
 
-from utils.constants import FILE_CATEGORIES
+from ..utils.constants import FILE_CATEGORIES
 
 
 def hash_file(path: str, block_size: int = 1024 * 1024) -> str:
